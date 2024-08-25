@@ -3,52 +3,165 @@
 <head>
     <meta charset="utf-8"> <!-- Define el conjunto de caracteres -->
     <title>Geodata Urbana - Inmuebles residenciales</title> <!-- Título de la página -->
+    
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"> <!-- Configura la vista para dispositivos móviles -->
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.5.1/mapbox-gl.css" rel="stylesheet"> <!-- Incluye el CSS de Mapbox -->
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.5.1/mapbox-gl.js"></script> <!-- Incluye el JS de Mapbox -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet"> <!-- Incluye la fuente Montserrat -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>  
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" type="text/css">
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script> <!-- Agregar Turf.js -->
+    
     <style>
-        body { margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; } /* Estilos básicos del cuerpo */
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; } /* Estilos para el mapa ocupando toda la pantalla */
+        body { margin: 0; 
+            padding: 0; 
+            font-family: 'Montserrat', sans-serif; 
+        } /* Estilos básicos del cuerpo */
+        
+        #map { position: absolute; 
+            top: 0; 
+            bottom: 0; 
+            width: 100%; 
+        } /* Estilos para el mapa ocupando toda la pantalla */
         #content-container {
             margin-top: 10px; /* Ajusta el espacio entre el botón y el contenido */
         }
 
+        /* PRIMERO TODO EL CSS QUE MODIFICA EL 'HEADER' QUE ES EL QUE TIENE LA IMAGEN, EL NOMBRE Y EL LOGO DE LA PAGINA */
+        .header {
+            position: relative;
+            text-align: center;
+            width: 100%;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            border: none;
+            z-index: 10;
+            height: 110px;
+        }
+        .header img {
+            width: 100%;
+            height: auto;
+            opacity: 1;
+            display: block;
+            margin: 0;
+            padding: 0;
+            filter: grayscale(100%); /* Imagen en blanco y negro */
+        }
+        .header h1 {
+            position: absolute;
+            font-size: 42px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            margin: 0;
+            display: flex; /* Flexbox para alinear logo y texto */
+            align-items: center; /* Alinear verticalmente el logo y el texto */
+        }
+        .header .logo {
+            width: 90px; /* Ajusta el tamaño del logo */
+            height: auto;
+            margin-right: 20px; /* Espacio entre el texto y el logo */
+        }
+        .geodata-link {
+            font-family: 'Montserrat', sans-serif; /* Cambia el tipo de letra de las opciones */
+            color: white; /* Color del texto */
+            font-weight: bold; /* Negrita */
+            font-size: 36px; /* Tamaño de fuente */
+            text-decoration: none; /* Sin subrayado */
+            transition: color 0.3s; /* Transición suave para cambios de color */
+        }
+        /* AQUI VA EL CSS PARA MODIFICAR EL CHECKBOX E INFO DOWNLOAD */
         .checkbox-container,
         .info-download-container {
             display: flex;
-            font-size: 12px;
+            font-size: 14px;
             align-items: center;
             gap: 10px; /* Espacio entre los elementos */
         }
-
+        /* AQUI VA EL CSS PARA MODIFICAR EL INFO CONTAINER QUE ES EL CONTENEDOR DEL MENÚ */
         .info-container {
             font-family: 'Montserrat', sans-serif;
-            font-size: 12px;
-            color: #333;
+            font-size: 14px;
             background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 5px;
+            border-radius: 0px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            margin: 10px 0;
-            position: relative;
-            display: flex;
+            margin: 0px 0 0; /* Margen superior para no superponerse con la cabecera */
+            position: fixed;
+            top: 100px; /* Ajusta la posición desde el borde superior de la pantalla */
+            left: 100px; /* Ajusta la posición desde el borde izquierdo, considerando el ancho de .side-tabs */
+            display: none;
             flex-direction: column;
             align-items: flex-start;
             max-height: 500px; /* Puedes ajustar la altura según tus necesidades */
-            max-width: 400px;
+            max-width: 350px;
             overflow-y: auto;
-
+            transition: margin-left 0.5s; /* Animación suave para el desplazamiento */
+            padding: 20px;
+            border-bottom-left-radius: 10px; /* Redondea la esquina inferior izquierda */
+            border-bottom-right-radius: 10px; /* Redondea la esquina inferior derecha */
+            
         }
-        #description {
+
+        #filter-ciudad  {
+            font-family: 'Montserrat', sans-serif; /* Aplicar la fuente Montserrat */
+            font-size: 14px; /* Tamaño de fuente, ajusta según tu preferencia */
+            padding: 8px 16px; /* Relleno para el botón */
+            border: none; /* Sin borde */
+            border-radius: 5px; /* Bordes redondeados */
+            background-color: #0074D9; /* Color de fondo */
+            color: white; /* Color del texto */
+            cursor: pointer; /* Cursor al pasar sobre el botón */
+            width: 100%;
+        }
+
+        #filter-ciudad option {
+            font-family: 'Montserrat', sans-serif; /* Cambia el tipo de letra de las opciones */
+            font-size: 14px; /* Cambia el tamaño de la letra de las opciones */
+            text-align: center; /* Centra el texto en el botón */
+        }
+        /* AQUI VA EL CSS PARA MODIFICAR LAS PESTAÑAS DEL MENÚ */
+        .tabs {
+            display: flex; /* Usar flexbox para la disposición */
+            flex-wrap: wrap; /* Permitir que los botones se envuelvan en múltiples filas */
+            justify-content: space-between; /* Espacio entre los botones */
+            padding: 0px; /* Espaciado alrededor de la barra de pestañas */
+            width: 100%; /* Asegura que ocupe todo el ancho del contenedor */
+        }
+        .tab-button {
+            flex: 1; /* Hacer que cada botón tome el mismo ancho */
+            margin: 1px; /* Espaciado entre los botones */
+            padding: 0px; /* Espaciado interno del botón */
+            cursor: pointer;
+            border: 1px solid #ccc; /* Borde del botón */
+            background-color: #f1f1f1; /* Color de fondo del botón */
+            font-size: 14px; /* Tamaño de fuente */
+            text-align: center; /* Centra el texto en el botón */
+            box-sizing: border-box; /* Incluye padding en el tamaño total */
+            font-family: 'Montserrat', sans-serif;
+        }
+        .tab-button:hover {
+            background-color: #ddd;
+        }
+        .tab-button.active {
+            background-color: #4CAF50;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        /* AQUI VA EL CSS PARA MODIFICAR EL TEXTO EN LA PESTAÑA 'DESCRIPCIÓN' */
+        #how-to {
             font-family: 'Montserrat', sans-serif; /* Asignamos la fuente del texto */
-            font-size: 12px; /* Tamaño de fuente */
+            font-size: 14px; /* Tamaño de fuente */
             color: #333; /* Color del texto */
             background-color: #f9f9f9; /* Color de fondo */
             padding: 15px; /* Relleno interno */
-            border-radius: 5px; /* Bordes redondeados */
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Sombra */
-            margin: 10px 0; /* Margen superior e inferior */
             text-align: justify; /* Justificar el texto */
             max-height: 700px; /* Altura inicial */
             overflow-y: auto;
@@ -56,13 +169,26 @@
             position: relative;
             line-height: 1.5;
         }
-
+        /* AQUI VA EL CSS PARA MODIFICAR EL TEXTO EN LA PESTAÑA 'DESCRIPCIÓN' */
+        #description {
+            font-family: 'Montserrat', sans-serif; /* Asignamos la fuente del texto */
+            font-size: 14px; /* Tamaño de fuente */
+            color: #333; /* Color del texto */
+            background-color: #f9f9f9; /* Color de fondo */
+            padding: 15px; /* Relleno interno */
+            text-align: justify; /* Justificar el texto */
+            max-height: 700px; /* Altura inicial */
+            overflow-y: auto;
+            max-width: auto;
+            position: relative;
+            line-height: 1.5;
+        }
         .description.expanded {
             max-height: none;
         }
         .expand-btn {
             font-family: 'Montserrat', sans-serif; /* Aplicar la fuente Montserrat */
-            font-size: 12px; /* Tamaño de fuente, ajusta según tu preferencia */
+            font-size: 14px; /* Tamaño de fuente, ajusta según tu preferencia */
             padding: 8px 10px; /* Relleno para el botón */
             border: none; /* Sin borde */
             border-radius: 5px; /* Bordes redondeados */
@@ -86,7 +212,7 @@
 
         #download-button {
             font-family: 'Montserrat', sans-serif; /* Aplicar la fuente Montserrat */
-            font-size: 12px; /* Tamaño de fuente, ajusta según tu preferencia */
+            font-size: 14px; /* Tamaño de fuente, ajusta según tu preferencia */
             padding: 8px 16px; /* Relleno para el botón */
             border: none; /* Sin borde */
             border-radius: 5px; /* Bordes redondeados */
@@ -96,6 +222,23 @@
             width: 100%;
         }
 
+        #filter-button {
+            font-family: 'Montserrat', sans-serif; /* Aplicar la fuente Montserrat */
+            font-size: 14px; /* Tamaño de fuente, ajusta según tu preferencia */
+            padding: 8px 16px; /* Relleno para el botón */
+            border: none; /* Sin borde */
+            border-radius: 5px; /* Bordes redondeados */
+            background-color: #333; /* Color de fondo */
+            color: white; /* Color del texto */
+            cursor: pointer; /* Cursor al pasar sobre el botón */
+            width: 100%;
+            margin-bottom: 15px
+        }
+        #filter-ciudad {
+            margin-top: 15;
+            margin-bottom: 10px;
+            background-color: #333;
+        }
         #download-button:hover {
             background-color: #0056b3; /* Color de fondo al pasar el ratón */
         }
@@ -119,9 +262,9 @@
             font-weight: 400;
         }
         
-        .map-overlay h1 {
+        .map-overlay h2 {
             margin: 0;
-            font-size: 18px;
+            font-size: 24px;
             margin-bottom: 0px;
         } /*  Estilos para el título h1 en el recuadro */
         
@@ -145,18 +288,18 @@
         } /* Estilos para el texto informativo en el recuadro  */
         
         .mapboxgl-popup-content {
-            font-size: 12px;
+            font-size: 14px;
             font-family: 'Montserrat', sans-serif;
             font-weight: 400; /* Regular */
         } /* Estilos para el contenido de los popups de Mapbox  */
         
         .map-controls input[type="checkbox"] {
-            font-size: 12px;
+            font-size: 14px;
             margin-right: 10px;
         } /* Estilos para los checkboxes de los controles del mapa  */
         
         .map-controls button {
-            font-size: 12px;
+            font-size: 14px;
             display: block;
             margin-top: 10px;
             padding: 5px 5px;
@@ -176,7 +319,7 @@
         
         .geocoder-container {
             position: absolute;
-            margin-top: 75px; /* Ajusta este valor según la altura real del header */
+            margin-top: 125px; /* Ajusta este valor según la altura real del header */
             top: 10px;
             right: 10px;
             z-index: 1;
@@ -187,51 +330,13 @@
             font-family: 'Montserrat', sans-serif;
         } /*  Estilos para el contenedor del geocodificador */
         
-        .tabs {
-            display: flex; /* Usar flexbox para la disposición */
-            flex-wrap: wrap; /* Permitir que los botones se envuelvan en múltiples filas */
-            justify-content: space-between; /* Espacio entre los botones */
-            padding: 0px; /* Espaciado alrededor de la barra de pestañas */
-            width: 100%; /* Asegura que ocupe todo el ancho del contenedor */
-        }
-
-        .tab-button {
-            flex: 1; /* Hacer que cada botón tome el mismo ancho */
-            margin: 1px; /* Espaciado entre los botones */
-            padding: 0px; /* Espaciado interno del botón */
-            cursor: pointer;
-            border: 1px solid #ccc; /* Borde del botón */
-            background-color: #f1f1f1; /* Color de fondo del botón */
-            font-size: 12px; /* Tamaño de fuente */
-            text-align: center; /* Centra el texto en el botón */
-            box-sizing: border-box; /* Incluye padding en el tamaño total */
-            font-family: 'Montserrat', sans-serif;
-        }
-
-        .tab-button:hover {
-            background-color: #ddd;
-        }
-
-        .tab-button.active {
-            background-color: #4CAF50;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        #nearby-services strong {
+        #nearby-vivienda strong, #nearby-services strong {
             display: block;
             margin-top: 20px;
         }
         
         table {
-            font-size: 12px; /* Tamaño de fuente */
+            font-size: 14px; /* Tamaño de fuente */
             border-collapse: collapse; /* Colapsar bordes de la tabla */
             width: 100%; /* Ancho total de la tabla */
         }
@@ -240,6 +345,17 @@
             border: 1px solid #ccc; /* Bordes de celdas */
             padding: 8px; /* Espaciado dentro de celdas */
             text-align: center; /* Alinear texto a la izquierda */
+        }
+        th {
+            cursor: pointer;
+        }
+
+        th.ascending::after {
+            content: ' ▲'; /* Flecha hacia arriba */
+        }
+
+        th.descending::after {
+            content: ' ▼'; /* Flecha hacia abajo */
         }
 
         thead {
@@ -257,7 +373,21 @@
             background-color: #f1f1f1; /* Color de fondo en hover */
         }
 
-        .service-info-table {
+        .map-legend {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 1);
+            font-family: 'Montserrat', sans-serif; /* Aplicar la fuente Montserrat */
+            font-size: 14px; /* Tamaño de fuente, ajusta según tu preferencia */
+            z-index: 1;
+            transition: bottom 0.5s ease-in-out; /* Transición suave para mover la leyenda */
+            text-align: justify; /* Alinear texto a la izquierda */
+        }
+        #vivienda-info-table, service-info-table{
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
@@ -265,16 +395,22 @@
             overflow-y: auto; /* Habilita el desplazamiento si es necesario */
         }
 
-        .service-info-table th, .service-info-table td {
+        .vivienda-info-table th, .vivienda-info-table td, .service-info-table th, .service-info-table td {
             border: 1px solid #ddd;
             padding: 0px;
             text-align: center;
-        }
-
-        .service-info-table th {
             background-color: #f2f2f2;
         }
-        .service-info-container {
+
+        .vivienda-info-container.expanded, .service-info-container.expanded {
+            display: block; /* Show when expanded */
+            /* Add other styles as needed */
+        }
+        #vivienda:hover {
+            text-decoration: underline;
+        }
+
+        #service-info-container, #vivienda-info-container {
             position: fixed; /* Fija el contenedor al fondo de la pantalla */
             bottom: 0; /* Ubica el contenedor en la parte inferior */
             left: 0; /* Alinea a la izquierda */
@@ -287,12 +423,13 @@
             overflow-y: auto; /* Añade scroll vertical si el contenido es más grande que la altura máxima */
             display: none; /* Inicialmente oculto */
         }
-        .service-info-container.expanded {
-            display: block; /* Show when expanded */
-            /* Add other styles as needed */
+
+        .service-table tr.highlight, .vivienda-table tr.highlight {
+            background-color: #98f188;
         }
-        #toggle-button {
-            font-size: 12px; /* Tamaño de fuente */
+        
+        #toggle-button, #toggle-button-2 {
+            font-size: 14px; /* Tamaño de fuente */
             width: 100%; /* Cubre el 100% del ancho */
             font-family: 'Montserrat', sans-serif; /* Aplica la fuente Montserrat */
             background-color: #4CAF50; /* Cambia el color de fondo (opcional) */
@@ -303,7 +440,7 @@
             transition: background-color 0.3s; /* Efecto de transición (opcional) */
         }
 
-        #toggle-button:hover {
+        #toggle-button:hover, #toggle-button-2:hover {
             background-color: #45a049; /* Cambia el color al pasar el mouse (opcional) */
         }
 
@@ -317,132 +454,354 @@
         
         
         .dropdown-container {
-            font-size: 12px;
+            font-size: 14px;
             font-family: 'Montserrat', sans-serif; /* Aplica la fuente Montserrat */
         }
         
-
-        .header {
+        .side-tabs {
             position: relative;
-            text-align: center;
-            width: 100%;
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-            border: none;
-            z-index: 10; /* Asegura que esté sobre otros elementos */
-            height: 75px;
+            left: 0;
+            height: calc(100% - 100px); /* Ajusta la altura para no sobrepasar la cabecera */
+            width: 75px; /* Ajusta el ancho según prefieras */
+            opacity: 0.9;
+            background-color: #333;
+            overflow: visible; /* Esconde el contenido del menú cuando está contraído */
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 1);
+            transition: 1s;
+            z-index: 1000; /* Asegura que el menú esté por encima de otros elementos */
+            padding: 10px;
+            padding-top: 10px; /* Ajusta el padding superior según sea necesario */
+            margin-right: 10px;
+            border-bottom-left-radius: 10px; /* Redondea la esquina inferior izquierda */
+            border-bottom-right-radius: 10px; /* Redondea la esquina inferior derecha */
         }
 
-        .header img {
-            width: 100%;
-            height: auto;
-            opacity: 1;
+        .tab-button {
             display: block;
-            margin: 0;
-            padding: 0;
-        }
-
-        .header h1 {
-            position: absolute;
-            font-size: 36px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            width: 95%;
+            padding: 10px; 
+            text-align: center;
+            border: none;
+            background-color: #333;
             color: white;
-            margin: 0;
+            cursor: pointer;
+            outline: none;
+            margin-top: 0px;
+            margin-right: 0px;
+            
+        }
+        .tab-button:hover {
+            background-color: #575757;
         }
 
-        .map-container {
+        .tab-button.active {
+            background-color: #575757; /* Color de fondo cuando el botón está activo */
+        }
+        #menu-toggle {
+            font-size: 36px; /* Tamaño de la fuente */
+            padding: 0px; /* Espaciado interno */
+            cursor: pointer;
+            border: 0px solid #575757; /* Borde del botón */
+            background-color: #333; /* Color de fondo del botón */
+            text-align: center; /* Centra el texto en el botón */
+            margin-right: 20px;
+        }
+        .side-tabs .tab-button:not(#menu-toggle) {
+            display: none;
+        }
+        
+        .side-tabs .tab-button {
+            
+            align-items: center; /* Alinear verticalmente el contenido */
+        }
+
+        .side-tabs .tab-button label {
+            margin-right: 5px; /* Espacio entre el label y el select */
+        }
+
+        .side-tabs select {
+            margin-top: 10px;
+            width: 100px; /* Ajusta el ancho del select como prefieras */
+        }
+        .header h1 div {
+            display: block; /* Hace que el div se comporte como un bloque */
+            margin-top: 0px; /* Ajusta el margen superior para separarlo del h1 */
+            text-align: center; /* Centra el texto en el botón */
+        }
+
+        .maki-icon {
+            width: 42px; /* Ajusta el tamaño según tus necesidades */
+            height: auto; /* Mantiene la proporción */
+            filter: invert(100%); /* Cambia el color a blanco */
+        }
+        
+        .side-tabs .tab-button {
+            position: relative; /* Necesario para posicionar el tooltip */
+        }
+
+        .side-tabs .tab-button::after {
+            content: attr(data-tooltip); /* Muestra el contenido del atributo data-tooltip */
             position: absolute;
+            bottom: 100%; /* Posiciona el tooltip encima del botón */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: black;
+            color: white;
+            padding: 5px;
+            border-radius: 4px;
+            white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none; /* Hace que el tooltip no interfiera con otros eventos */
+            font-size: 12px;
+            margin-left: 20px; /* Añade un pequeño espacio entre el botón y el tooltip */
+            z-index: 9999; /* Asegura que el tooltip esté en el frente y no sea cortado */
+        }
+
+        .side-tabs .tab-button:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .selected-row {
+            background-color: #ffa971; /* Color de fondo para la fila seleccionada */
+        }
+        #compare table {
+            width: 100%; /* Asegura que la tabla ocupe todo el ancho del contenedor */
+            border-collapse: collapse;
+            resize: both; /* Permite el redimensionamiento horizontal y vertical */
+            overflow: auto; /* Asegura que el contenido se ajuste al tamaño de la tabla */
+            max-height: 400px; /* Define un máximo para la altura de la tabla */
+            max-width: 100%; /* Define un máximo para el ancho de la tabla */
+        }
+
+        #compare th, #compare td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        #compare th {
+            background-color: #f2f2f2;
+            text-align: left;
+        }
+        
+        .vivienda-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .vivienda-table th, .vivienda-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .vivienda-table td {
+            min-width: 100px; /* Ajusta según tus necesidades */
+        }
+        .close-icon {
+            width: 25px; /* Tamaño del ícono */
+            height: 25px;
+            background-image: url('path/to/cross.svg'); /* Ruta al ícono cross.svg */
+            background-size: 30px 30px; /* Tamaño del ícono dentro del círculo */
+            background-position: center; /* Centrar el ícono dentro del círculo */
+            background-repeat: no-repeat; /* Evitar que el ícono se repita */
+
+            /* Fondo circular gris con transparencia */
+            background-color: rgba(128, 128, 128, 0.5); /* Gris con 50% de opacidad */
+            border-radius: 50%; /* Hace que el fondo sea un círculo */
+
+            position: absolute;
+            top: 3px; /* Ajusta según sea necesario */
+            right: 45%; /* Ajusta según sea necesario */
+            cursor: pointer;
+            /* Ajusta el tamaño del borde si es necesario */
+            border: 4px solid rgba(128, 128, 128, 0.5); /* Borde gris del mismo color que el fondo */
+        }
+
+        #service-info,
+        #vivienda-info {
+            position: relative;
+            padding-top: 30px; /* Espacio para el ícono de cierre */
+        }
+        
+        /* Estilo para el modal */
+        .modal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 1; /* Asegura que esté debajo del header */
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
+            z-index: 1000;
         }
+
+        /* Contenido del modal */
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            width: 300px;
+        }
+
+        /* Estilo para el botón de cerrar */
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        /* Estilo del botón de confirmación */
+        #confirm-selection {
+            margin-top: 10px;
+            font-family: 'Montserrat', sans-serif; /* Aplica la fuente Montserrat */
+            font-size: 14px;
+        }
+
     </style>
 </head>
 <body>
     
-    <div class="header" style="position: relative; text-align: center; width: 100%; overflow: hidden; margin: 0; padding: 0; border: none;">
-        <img src="https://i.imgur.com/9iMowPv.jpg" alt="Fondo" style="width: 100%; height: auto; opacity: 1; display: block; margin: 0; padding: 0;">
-        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; opacity: 0.6; margin: 0; padding: 0;"></div>
-        <h1 style="position: absolute; font-size: 36px; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; margin: 0;">
-            <a href="http://www.geo-data-urbana.com" style="color: white;"><strong>GEODATA URBANA</strong></a>
+    
+    <div class="header">
+        <img src="https://i.imgur.com/9iMowPv.jpg" alt="Fondo">
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; opacity: 0.6;"></div>
+        
+        <h1 style="display: flex; align-items: center; justify-content: flex-start;"> <!-- Flex container -->
+            <div style="display: flex; flex-direction: column; text-align: center; margin-right: 20px;"> <!-- Columna para el texto -->
+                <a href="http://www.geo-data-urbana.com" class="geodata-link" target="_blank" rel="noopener noreferrer"><strong>GEODATA URBANA</strong></a>
+                <div style="color: white;  text-align: center; font-size: 14px; margin-top: 0px; margin-right: 20px;">MAPEANDO HOY PARA PLANIFICAR EL MAÑANA</div> <!-- Subtítulo -->
+            </div>
+            <img src="https://i.imgur.com/IVUoM9y.png" alt="Logo" class="logo" style="margin-right: 0px;"> <!-- Margen para separar la imagen -->
+            <div style="display: flex; flex-direction: column; text-align: center;"> <!-- Columna para el texto -->
+                <div style="color: white; font-size: 18px; margin-top: 0px; margin-left: 20px;  text-align: center;">INMUEBLES RESIDENCIALES EN VENTA</div> <!-- Subtítulo -->
+            </div>
         </h1>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="filter-button">
+                <label for="filter-ciudad">Selecciona una entidad:</label>
+                <select id="filter-ciudad" style="margin-top: 10px;">
+                    <option value="">Todas</option>
+                    <option value="Buenos Aires">Buenos Aires, AR</option>
+                    <option value="Bogota">Bogota, CO</option>
+                    <!-- Agrega más opciones según los valores de Ciudad -->
+                </select>
+            </div>
+            <button id="confirm-selection">Confirmar selección</button>
+        </div>
     </div>
     
     <div id="map"></div>
+
     
-    <div class="geocoder-container" id="geocoder">
+    <div class="side-tabs">
+        <button id="menu-toggle" class="tab-button" data-tooltip="Expandir/Ocultar">☰</button>
         
-        <div class="checkbox-container">
-            <label for="toggle-geojson">Mostrar puntos</label> <!-- Etiqueta para el checkbox -->  
-            <input type="checkbox" id="toggle-geojson" checked> <!-- Checkbox para mostrar/ocultar la capa GeoJSON -->
+        <button class="tab-button" onclick="showTab('description')" data-tooltip="Geodata Urbana">
+            <img src="https://i.imgur.com/dO24jzX.png" alt="Geodata Urbana" class="maki-icon" />
+        </button>
+        <button class="tab-button" onclick="showTab('how-to')" data-tooltip="¿Cómo usar?">
+            <img src="https://cdn.jsdelivr.net/gh/mapbox/maki@latest/icons/caution.svg" alt="¿Cómo usar?" class="maki-icon" />
+        </button>
+        <button class="tab-button" onclick="showTab('property-info')" data-tooltip="Inmueble">
+            <img src="https://cdn.jsdelivr.net/gh/mapbox/maki@latest/icons/home.svg" alt="Inmueble" class="maki-icon" />
+        </button>
+        <button class="tab-button" onclick="showTab('compare')" data-tooltip="Comparar propiedad">
+            <img src="https://cdn.jsdelivr.net/gh/mapbox/maki@latest/icons/town.svg" alt="Comparar propiedad" class="maki-icon" />
+        </button>
+        <button class="tab-button" onclick="showTab('nearby-services')" data-tooltip="Servicios cercanos">
+            <img src="https://cdn.jsdelivr.net/gh/mapbox/maki@latest/icons/landuse.svg" alt="Servicios cercanos" class="maki-icon" />
+        </button>
+        <button class="tab-button" onclick="showTab('download')" data-tooltip="Descargar">
+            <img src="https://cdn.jsdelivr.net/gh/mapbox/maki@latest/icons/landmark-JP.svg" alt="Descargar" class="maki-icon" />
+        </button>
+    </div>
+
+    <div id="legend" class="map-legend"></div>
+    
+    <div class="info-container" id="info-container">  
+
+        <!-- Contenido de las pestañas -->
+        <div id="how-to" class="tab-content">
+            <p>
+                Para comenzar haz click en cualquiera de los <strong>inmuebles residenciales en venta</strong> recopilados 
+                de distintas páginas de promoción de inmuebles durante el primer semestre del año 2024. 
+            </p>
+            <p>
+                Después de hacer click y acercarte al punto de interés puedes revisar las información del inmueble en la pestaña <strong>'Inmueble'</strong> y <strong>'Servicios cercanos'</strong>.
+            </p>
+            <p>
+                Finalmente en la pestaña <strong>'Descargar'</strong> puedes descargar los inmuebles que se encuentran en la ventana en formato GeoJSON.
+            </p>
         </div>
         
-    </div>
-    
-    <div class="info-container">
-        
-    <h2>Inmuebles residenciales en venta</h2>  <!-- Subtítulo del recuadro -->
-        
-     <!-- Barra de pestañas -->
-    <div class="tabs">
-        <button class="tab-button" onclick="showTab('description')">Geodata Urbana</button>
-        <button class="tab-button" onclick="showTab('property-info')">Inmueble</button>
-        <button class="tab-button" onclick="showTab('nearby-services')">Servicios cercanos</button>
-        <button class="tab-button" onclick="showTab('download')">Descargar</button>
-    </div>
-
-    <!-- Contenido de las pestañas -->
-    <div id="description" class="tab-content">
-        <p>
-            La información mostrada en este mapa corresponde a <strong>inmuebles residenciales en venta</strong> recopilados 
-            de distintas páginas de promoción de inmuebles durante el primer semestre del año 2024. 
-        </p>
-        El objetivo en <a href="http://www.geo-data-urbana.com"><strong>Geodata Urbana</strong></a> es crear una base de datos abiertos 
-        donde analistas espaciales o especialistas en sistemas de información geográfica puedan acceder 
-        a esta información de manera <strong>rápida y sencilla</strong> para potenciar los análisis realizados en el entorno urbano.
-        <p></p>
-        <p>
-            Esta base de datos puede ser utilizada para diversos fines, especialmente en el ámbito de la investigación y desarrollo urbano, 
-            donde se pueden realizar estudios sobre tendencias del mercado inmobiliario, análisis de accesibilidad y 
-            localización, evaluación de precios y superficies, y mucho más.
-        </p>
-    </div>
-
-    <div id="property-info" class="tab-content" style="display:none;"></div>
-
-    <div id="nearby-services" class="tab-content" style="display:none;"></div>
-
-    <div id="download" class="tab-content">
-        <p>
-            Aquí podrás descargar en formato GeoJSON los inmuebles en venta visibles en la ventana. 
-        </p>
-        <div class="info-download-container" id ="info">
-            <button id="download-button">Descargar GeoJSON</button> <!-- Botón para descargar datos -->
+        <!-- Contenido de las pestañas -->
+        <div id="description" class="tab-content">
+            <p>
+                La información mostrada en este mapa corresponde a <strong>inmuebles residenciales en venta</strong> recopilados 
+                de distintas páginas de promoción de inmuebles durante el primer semestre del año 2024. 
+            </p>
+            <p>
+                El objetivo en <a href="http://www.geo-data-urbana.com"><strong>Geodata Urbana</strong></a> es crear una base de datos abiertos 
+                donde analistas espaciales o especialistas en sistemas de información geográfica puedan acceder 
+                a esta información de manera <strong>rápida y sencilla</strong> para potenciar los análisis realizados en el entorno urbano.
+            </p>
+            <p>
+                Esta base de datos puede ser utilizada para diversos fines, especialmente en el ámbito de la investigación y desarrollo urbano, 
+                donde se pueden realizar estudios sobre tendencias del mercado inmobiliario, análisis de accesibilidad y 
+                localización, evaluación de precios y superficies, y mucho más.
+            </p>
         </div>
-    </div>
-    
-    <div id="service-info-container" class="service-info-container">
-        <button id="toggle-button">Ocultar servicios</button>    
-        <div id="service-info" class="service-info"></div> 
-    </div>
-  
-    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>  
-    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" type="text/css">
-    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script> <!-- Agregar Turf.js -->
-    
+
         
+        
+        <div id="property-info" class="tab-content" style="display:none;"></div>
+        
+        <div id="compare" class="tab-content" style="display:none;"></div>
+        
+        <div id="nearby-services" class="tab-content" style="display:none;"></div>
+        
+        <div id="download" class="tab-content">
+            <p>
+                Aquí podrás descargar en formato GeoJSON los inmuebles en venta visibles en la ventana. 
+            </p>
+            <div class="info-download-container" id ="info">
+                <button id="download-button" >Descargar GeoJSON</button> <!-- Botón para descargar datos -->
+            </div>
+        </div>
+
+        <div id="service-info-container" class="service-info-container">
+            <button id="toggle-button">Mostrar servicios</button>    
+            <div id="service-info" class="service-info" style="display:none;">></div> 
+            <img id="close-service" class="close-icon" src="https://cdn.jsdelivr.net/gh/mapbox/maki/icons/cross.svg" alt="Cerrar">
+        </div>
+        
+        <div id="vivienda-info-container" class="vivienda-info-container">
+            <button id="toggle-button-2">Mostrar viviendas</button>    
+            <div id="vivienda-info" class="vivienda-info" style="display:none;">></div> 
+            <img id="close-vivienda" class="close-icon" src="https://cdn.jsdelivr.net/gh/mapbox/maki/icons/cross.svg" alt="Cerrar">
+        </div> 
+
+    </div>   
     <script>
         mapboxgl.accessToken = 'pk.eyJ1IjoicGFjby1zb2xzb25hIiwiYSI6ImNseWczNG1tbTA1eGIyanBudTZocnlncmwifQ.S2cqYETyR3u-5PBEy0-AsQ';
         const map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/paco-solsona/clysujpvt003w01pahhejgddq',
             projection: 'globe',
-            zoom: 11,
+            zoom: 8,
             center: [-74.0978858, 4.67]
         });
 
@@ -452,6 +811,22 @@
 
         map.on('load', () => {
 
+            map.addSource('tileset-source', {
+                type: 'vector',
+                url: 'mapbox://paco-solsona.au40olam'
+            });
+            map.addLayer({
+                id: 'vivienda-layer',
+                type: 'circle',
+                source: 'tileset-source',
+                'source-layer': 'Suramerica_Vivienda-b9hfdt',
+                paint: {
+                    'circle-radius': 4,
+                    'circle-color': 'black',
+                    'fill-opacity': 0.7
+                }
+            });
+            /*  */
             map.addSource('escuelas', {
                 type: 'vector',
                 url: 'mapbox://paco-solsona.db41hxa5' // Coloca aquí la URL de tu GeoJSON de escuelas
@@ -468,24 +843,6 @@
                     'circle-color': 'blue'
                 }
             });
-            /* */
-            
-            map.addSource('tileset-source', {
-                type: 'vector',
-                url: 'mapbox://paco-solsona.7qeu36ho'
-            });
-            map.addLayer({
-                id: 'tileset-layer',
-                type: 'circle',
-                source: 'tileset-source',
-                'source-layer': 'Viviendas_COL_BOG-3lozlg',
-                paint: {
-                    'circle-radius': 4,
-                    'circle-color': 'black',
-                    'fill-opacity': 0.7
-                }
-            });
-            /*  */
             map.addSource('salud', {
                 type: 'vector',
                 url: 'mapbox://paco-solsona.2cw5q8vn' // Coloca aquí la URL de tu GeoJSON de escuelas
@@ -501,12 +858,38 @@
                 }
             });
             /* */
+            // Verificar que la fuente de Mapbox Streets esté cargada
+            
 
+            /* */
+                      
+             map.on('sourcedata', (e) => {
+                if (e.sourceId === 'tileset-source' && e.isSourceLoaded) {
+                    const features = map.querySourceFeatures('tileset-source', { sourceLayer: 'Suramerica_Vivienda-b9hfdt' });
+                    features.forEach((feature) => {
+                        uniqueValues.add(feature.properties.Ciudad);
+                    });
 
+                    const filterCiudad = document.getElementById('filter-ciudad');
+                    uniqueValues.forEach((value) => {
+                        const option = document.createElement('option');
+                        option.value = value;
+                        option.text = value;
+                        filterCiudad.add(option);
+                    });
+                }
+            });
+
+            document.getElementById('filter-ciudad').addEventListener('change', (e) => {
+                const selectedValue = e.target.value;
+                map.setFilter('vivienda-layer', selectedValue ? ['==', ['get', 'Ciudad'], selectedValue] : null);
+            });
+
+            
             // Agregar otras capas y fuentes aquí...
             let coordinates;
-            map.on('click', 'tileset-layer', (e) => {
-                
+            
+            map.on('click', 'vivienda-layer', (e) => {
                 
                 coordinates = e.features[0].geometry.coordinates.slice(); // Cambiar a let
                 const properties = e.features[0].properties;
@@ -547,21 +930,28 @@
                 const precio_formateado = formatNumber(properties.Precio || '0');
                 const precio_m2_construido = formatNumber(isNaN(parseFloat(properties.pm2_c)) ? '0' : parseFloat(properties.pm2_c).toFixed(1));
                 const precio_m2_total = formatNumber(isNaN(parseFloat(properties.pm2_t)) ? '0' : parseFloat(properties.pm2_t).toFixed(1));
-
+                
                 if (map.getLayer('isochrone-layer')) {
                     map.removeLayer('isochrone-layer');
                     map.removeLayer('isochrone-line-layer');
                     map.removeSource('isochrone-source');
                 }
 
+                // Variable global para almacenar la respuesta de la isocrona
+                let isochroneData = null;
+                let isocronaGeometry = null; // Variable global para la geometría de la isocrona
+                
                 const isochroneUrl = `https://api.mapbox.com/isochrone/v1/mapbox/walking/${coordinates[0]},${coordinates[1]}?contours_meters=1000&polygons=true&access_token=${mapboxgl.accessToken}`;
-
+        
                 fetch(isochroneUrl)
                     .then(response => response.json())
                     .then(data => {
+                        isochroneData = data; // Guardar los datos en la variable global
+                        isocronaGeometry = data.features[0].geometry; // Asignar la geometría a la variable global
+                    
                         map.addSource('isochrone-source', {
                             type: 'geojson',
-                            data: data
+                            data: isochroneData
                         });
 
                         map.addLayer({
@@ -592,7 +982,7 @@
                         });
                         map.fitBounds(bounds, {
                             padding: {
-                                top: 100,
+                                top: 150,
                                 bottom: 100,
                                 left: 250,  // Reduce este valor para desplazar más hacia la derecha
                                 right: 0  // Incrementa este valor para desplazar más hacia la derecha
@@ -603,12 +993,11 @@
                             }
                         });
                         
-                        const isocronaGeometry = data.features[0].geometry;
-
+                    
                         // Esperar a que la capa 'escuelas' esté cargada
                         map.once('idle', () => {
+
                             
-                           
                             //////////////
                             const allSchools = map.querySourceFeatures('escuelas', {sourceLayer: 'Educacion_COL_BOG-2c0xat'});
                             
@@ -654,16 +1043,38 @@
                                     }
                                 });
                             }
-                            // Función para mostrar los servicios en la tabla                      
+                            
+                            //////////
+                            
+                            // Filtrar propiedades de vivienda dentro de la isocrona
+                            const allVivienda = map.querySourceFeatures('tileset-source', {sourceLayer: 'Suramerica_Vivienda-b9hfdt'});
+                            const viviendaInsideIsochrone = allVivienda.filter(feature => turf.booleanContains(isocronaGeometry, feature.geometry));
+
+                            // Crear un nuevo GeoJSON con las propiedades dentro de la isocrona
+                            const filteredViviendaGeoJSON = {type: 'FeatureCollection', features: viviendaInsideIsochrone};
+
+                            if (map.getSource('filtered-vivienda')) {
+                                map.getSource('filtered-vivienda').setData(filteredViviendaGeoJSON);
+                            } else {
+                                map.addSource('filtered-vivienda', {
+                                    type: 'geojson',
+                                    data: filteredViviendaGeoJSON
+                                });
+
+                                map.addLayer({
+                                    id: 'filtered-vivienda-layer',
+                                    type: 'circle',
+                                    source: 'filtered-vivienda',
+                                    paint: {
+                                        'circle-radius': 0,
+                                        'circle-color': 'black'
+                                    }
+                                });
+                            }
+
                             
                             map.once('idle', () => {
-                              
-                                const schoolsCount = map.queryRenderedFeatures({
-                                    layers: ['escuelas-layer']
-                                }).filter(feature => turf.booleanContains(isocronaGeometry, feature.geometry)).length;
-                                const saludCount = map.queryRenderedFeatures({
-                                    layers: ['salud-layer']
-                                }).filter(feature => turf.booleanContains(isocronaGeometry, feature.geometry)).length;
+
 
                                 const updatedDescription = `
                                     <style>
@@ -686,19 +1097,19 @@
 
                                     <div class="popup-content">
                                         <div class="popup-header">
-                                            <strong>${properties['Tipo de casa'] ? `${properties['Tipo de casa']}<br>` : ''}</strong><br>
+                                            <strong>${properties['Tipo de ca'] ? `${properties['Tipo de ca']}<br>` : ''}</strong><br>
                                             ${properties.Descripcion ? `${properties.Descripcion}<br>` : ''}
                                             ${precio_formateado ? `Precio (MXN): ${precio_formateado}<br>` : ''}
-                                            ${properties['Área total'] ? `Sup. total (m²): ${properties['Área total']}<br>` : ''}
+                                            ${properties['Área tota'] ? `Sup. total (m²): ${properties['Área total']}<br>` : ''}
                                             ${precio_m2_total ? `Precio m² total: ${precio_m2_total}<br>` : ''}
-                                            ${properties['Área construida'] ? `Sup. construida (m²): ${properties['Área construida']}<br>` : ''}
+                                            ${properties['Área cons'] ? `Sup. construida (m²): ${properties['Área construida']}<br>` : ''}
                                             ${precio_m2_construido ? `Precio m² construido: ${precio_m2_construido}<br>` : ''}
-                                            ${properties['Cantidad de baños'] ? `Baños: ${properties['Cantidad de baños']}<br>` : ''}
-                                            ${properties['Estacionamientos'] ? `Estacionamiento: ${properties['Estacionamientos']}<br>` : ''}
-                                            ${properties['Cantidad de pisos'] ? `Pisos: ${properties['Cantidad de pisos']}<br>` : ''}
-                                            ${properties['Habitaciones'] ? `Cuartos: ${properties['Habitaciones']}<br>` : ''}
-                                            ${properties['Antigüedad'] ? `Edad: ${properties['Antigüedad']}<br>` : ''}
-                                            ${properties['Estrato social'] ? `Estrato social: ${properties['Estrato social']}<br>` : ''}
+                                            ${properties['Baños'] ? `Baños: ${properties['Cantidad de baños']}<br>` : ''}
+                                            ${properties['Estacionam'] ? `Estacionamiento: ${properties['Estacionamientos']}<br>` : ''}
+                                            ${properties['Cantidad d'] ? `Pisos: ${properties['Cantidad de pisos']}<br>` : ''}
+                                            ${properties['Habitacion'] ? `Cuartos: ${properties['Habitaciones']}<br>` : ''}
+                                            ${properties['Antigüeda'] ? `Edad: ${properties['Antigüedad']}<br>` : ''}
+                                            ${properties['Estrato so'] ? `Estrato social: ${properties['Estrato social']}<br>` : ''}
                                             ${properties['Link'] ? `<a href="${properties['Link']}" target="_blank">Link</a><br>` : ''}
                                         </div>
                                     </div>
@@ -711,9 +1122,7 @@
                                 propertyInfoContainer.style.width = '100%';
                                 propertyInfoContainer.style.boxSizing = 'border-box';
                                 // Asegurarse de que la pestaña correcta esté visible
-                                showTab('property-info');
-                                 
-                            });                            
+                            }); 
                             
                         });
                     
@@ -721,24 +1130,65 @@
                 
             });
             
-            map.on('mouseenter', 'tileset-layer', () => {
+            map.on('mouseenter', 'vivienda-layer', () => {
                 map.getCanvas().style.cursor = 'pointer';
             });
 
-            map.on('mouseleave', 'tileset-layer', () => {
+            map.on('mouseleave', 'vivienda-layer', () => {
                 map.getCanvas().style.cursor = '';
             });
             
             
-            const toggleControl = document.getElementById('toggle-geojson');
-            toggleControl.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    map.setLayoutProperty('tileset-layer', 'visibility', 'visible');
-                } else {
-                    map.setLayoutProperty('tileset-layer', 'visibility', 'none');
+            function showTooltip(text) {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.innerText = text; // Asigna el texto del tooltip
+                tooltip.style.display = 'block'; // Muestra el tooltip
+
+                // Coloca el tooltip en la posición del mouse
+                document.onmousemove = function(e) {
+                    tooltip.style.left = e.pageX + 10 + 'px'; // Ajusta la posición
+                    tooltip.style.top = e.pageY + 10 + 'px'; // Ajusta la posición
+                };
+            }
+
+            function hideTooltip() {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'none'; // Oculta el tooltip
+                document.onmousemove = null; // Limpia el evento de movimiento del mouse
+            }
+            
+            
+            var menuToggle = document.getElementById('menu-toggle');
+            var infoContainer = document.querySelector('.info-container');
+
+            // Inicializa el estado de visibilidad
+            infoContainer.style.display = 'none'; // Asegúrate de que comience oculto
+
+            // Función para desplegar/ocultar los botones y el info-container
+            menuToggle.addEventListener('click', function () {
+                var buttons = document.querySelectorAll('.side-tabs .tab-button:not(#menu-toggle)');
+                buttons.forEach(function (button) {
+                    button.style.display = button.style.display === 'none' || button.style.display === '' ? 'block' : 'none'; // Alternar visibilidad
+                });
+
+                // Ocultar el info-container al hacer clic en el menu-toggle
+                if (infoContainer.style.display === 'block') {
+                    infoContainer.style.display = 'none'; // Ocultar el info-container
                 }
             });
+
+            // Función para mostrar el info-container al hacer clic en los side-tabs
+            var sideTabs = document.querySelectorAll('.side-tabs .tab-button:not(#menu-toggle)');
+            sideTabs.forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    infoContainer.style.display = 'block'; // Mostrar el info-container
+                });
+            });
             
+            // Variable para rastrear la tabla activa
+            // Variable para rastrear el botón y la tabla activa
+            let activeButton = null;
+            let activeInfo = null;
             let activeTab = null; // Variable para rastrear la pestaña activa
 
             function showTab(tabId) {
@@ -762,310 +1212,430 @@
                 }
             }
             
+            var buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    // Eliminar la clase 'active' de todos los botones
+                    buttons.forEach(btn => btn.classList.remove('active'));
+                    // Agregar la clase 'active' al botón clicado
+                    this.classList.add('active');
+                });
+            });
+            
+            document.getElementById('menu-toggle').addEventListener('click', function() {
+                const sideTabs = document.getElementById('side-tabs');
+                const buttons = document.querySelectorAll('.side-tabs .tab-button:not(#menu-toggle)');
+
+                if (sideTabs.classList.contains('expanded')) {
+                    sideTabs.classList.remove('expanded');
+                    buttons.forEach(button => {
+                        button.style.display = 'none';
+                    });
+                } else {
+                    sideTabs.classList.add('expanded');
+                    buttons.forEach(button => {
+                        button.style.display = 'block';
+                    });
+                }
+            });
+            
+            // Función para ocultar la tabla activa
+            function hideActiveInfo() {
+                if (activeInfo) {
+                    activeInfo.style.display = 'none'; // Ocultar la tabla
+                    if (activeButton) {
+                        activeButton.textContent = 'Mostrar'; // Cambiar el texto del botón
+                    }
+                }
+            }
+            
             // Añadir este bloque de código para manejar el evento click en la pestaña "Descripción"
             document.querySelector(`.tab-button[onclick="showTab('description')"]`).addEventListener('click', () => {
                 showTab('description');
             });
-
             // Añadir este bloque de código para manejar el evento click en la pestaña "Información del inmueble"
             document.querySelector(`.tab-button[onclick="showTab('property-info')"]`).addEventListener('click', () => {
                 showTab('property-info');
             });
-            
             // Añadir este bloque de código para manejar el evento click en la pestaña "Información del inmueble"
             document.querySelector(`.tab-button[onclick="showTab('download')"]`).addEventListener('click', () => {
                 showTab('download');
             });
-
+            // Añadir este bloque de código para manejar el evento click en la pestaña "Información del inmueble"
+            document.querySelector(`.tab-button[onclick="showTab('how-to')"]`).addEventListener('click', () => {
+                showTab('how-to');
+            });
+                   
             
-            // Función para calcular los conteos de servicios dentro de la isocrona
-            function countServicesInIsocrona(isocronaGeometry) {
+            document.getElementById("close-service").addEventListener("click", function() {
+                document.getElementById("toggle-button").style.display = "none";
+                document.getElementById("service-info").style.display = "none"; // Si también quieres ocultar la información
+            });
 
-                const schoolsCount = map.queryRenderedFeatures({
-                    layers: ['filtered-escuelas-layer']
-                }).filter(feature => turf.booleanContains(isocronaGeometry, feature.geometry)).length;
-
-                const saludCount = map.queryRenderedFeatures({
-                    layers: ['filtered-salud-layer']
-                }).filter(feature => turf.booleanContains(isocronaGeometry, feature.geometry)).length;
-
-                return { schoolsCount, saludCount };
-            }
-
+            document.getElementById("close-vivienda").addEventListener("click", function() {
+                document.getElementById("toggle-button-2").style.display = "none";
+                document.getElementById("vivienda-info").style.display = "none"; // Si también quieres ocultar la información
+            });
             
-            // Añadir el evento click en la pestaña "Servicios cercanos"
-            document.querySelector(`.tab-button[onclick="showTab('nearby-services')"]`).addEventListener('click', () => {
+            document.getElementById('filter-ciudad').addEventListener('change', function () {
+                var selectedValue = this.value;
 
-                const interactiveElementsHTML = `
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 20px; font-family: 'Montserrat', sans-serif;">
-
-                        <!-- Título descriptivo -->
-                        <strong style="font-size: 12px; line-height: 1;">Selecciona el método de transporte y la distancia.</strong>
-
-                        <!-- Contenedor de método de transporte y distancia -->
-                        <div style="display: flex; flex-direction: row; gap: 10px; align-items: center;">
-
-                            <!-- Dropdown para seleccionar el método de transporte -->
-                            <div style="display: flex; flex-direction: column; text-align: center;">
-                                <label for="transportation-method" style="margin-bottom: 10px;" text-align: center;>Método de Transporte:</label>
-                                <select id="transportation-method" style="font-family: 'Montserrat', sans-serif;">
-                                    <option value="walking">Caminando</option>
-                                    <option value="driving">Conduciendo</option>
-                                    <option value="cycling">En bicicleta</option>
-                                </select>
-                            </div>
-
-                            <!-- Cuadro de texto para ingresar la distancia -->
-                            <div style="display: flex; flex-direction: column; text-align: center;">
-                                <label for="isochrone-distance" style="margin-bottom: 10px;" text-align: center;>Distancia (metros):</label>
-                                <input type="number" id="isochrone-distance" min="100" max="10000" value="1000" style="font-family: 'Montserrat', sans-serif;">
-                            </div>
-                        </div>
-
-                        <!-- Botón para generar y mostrar la isocrona -->
-                        <button id="generate-isochrone" style="font-family: 'Montserrat', sans-serif;">Mostrar servicios</button>
-                    </div>
-                `;
-                // Obtener la geometría de la isocrona
-                const isocronaGeometry = map.getSource('isochrone-source')._data.features[0].geometry;
-
-                // Calcular los conteos de servicios a partir de la isocrona
-                const { abarrotesCount, schoolsCount, saludCount } = countServicesInIsocrona(isocronaGeometry);
-
-                // HTML para la información de servicios
-                const servicesInfoHTML = `
-                    
-                    <p>Haz click en cualquiera de los servicios debajo para ver la lista.</p>
-                    <strong id="educational-services" style="color: #144afc; cursor: pointer;">Servicios educativos: ${schoolsCount}</strong>
-                    <strong id="health-services" style="color: #f50000; cursor: pointer;">Servicios gubernamentales: ${saludCount}</strong>
-                `;
-
-                // Combinar ambos bloques HTML y asignarlo al contenido de la pestaña
-                document.getElementById('nearby-services').innerHTML = interactiveElementsHTML + servicesInfoHTML;
-
-                // Asignar eventos a los servicios
-                handleServiceClick('educational-services', 'filtered-escuelas-layer');
-                handleServiceClick('health-services', 'filtered-salud-layer');
-
-                // Mostrar la pestaña "Servicios cercanos"
-                showTab('nearby-services');
-
-                // Añadir el evento al botón "Mostrar servicios" para generar la isocrona
-                document.getElementById('generate-isochrone').addEventListener('click', () => {
-                    
-                    const method = document.getElementById('transportation-method').value;
-                    const distance = document.getElementById('isochrone-distance').value;
-
-                    
-                    // Verifica si hay coordenadas disponibles
-                    if (!coordinates) {
-                        alert('Por favor, selecciona un punto en el mapa primero.');
-                        return;
-                    }
-                    
-                    // Remover la isocrona anterior, si existe
-                    if (map.getLayer('isochrone-layer')) {
-                        map.removeLayer('isochrone-layer');
-                        map.removeLayer('isochrone-line-layer');
-                        map.removeSource('isochrone-source');
-                    }
-
-                    // Aquí deberías integrar el código para generar la nueva isocrona usando el método y distancia seleccionados
-                    
-                    const isochroneUrl = `https://api.mapbox.com/isochrone/v1/mapbox/${method}/${coordinates[0]},${coordinates[1]}?contours_meters=${distance}&polygons=true&access_token=${mapboxgl.accessToken}`;
-                    
-                    fetch(isochroneUrl)
-                        .then(response => response.json())
-                        .then(data => {
-                            map.addSource('isochrone-source', {
-                                type: 'geojson',
-                                data: data
-                            });
-
-                            map.addLayer({
-                                id: 'isochrone-layer',
-                                type: 'fill',
-                                source: 'isochrone-source',
-                                layout: {},
-                                paint: {
-                                    'fill-color': 'grey',
-                                    'fill-opacity': 0.3,
-                                }
-                            });
-
-                            map.addLayer({
-                                id: 'isochrone-line-layer',
-                                type: 'line',
-                                source: 'isochrone-source',
-                                layout: {},
-                                paint: {
-                                    'line-color': 'black',
-                                    'line-width': 4
-                                }
-                            });
-
-                            // Ajustar el zoom a la capa de isocrona
-                            const bounds = new mapboxgl.LngLatBounds();
-                            data.features[0].geometry.coordinates[0].forEach(coord => {
-                                bounds.extend(coord);
-                            });
-                            map.fitBounds(bounds, {
-                                padding: {
-                                    top: 100,
-                                    bottom: 100,
-                                    left: 250,  // Reduce este valor para desplazar más hacia la derecha
-                                    right: 0  // Incrementa este valor para desplazar más hacia la derecha
-                                },
-                                duration: 3000,
-                                easing: function(t) {
-                                    return t * (2 - t);  // Suavizado: la animación empieza rápido y termina lentamente
-                                }
-                            });
-
-                            const isocronaGeometry = data.features[0].geometry;
-
-                            
-                        
-                            // Esperar a que la capa 'escuelas' esté cargada
-                            map.once('idle', () => {
-                                // Actualizar los servicios con los nuevos datos de isocrona
-
-                                const allSchools = map.querySourceFeatures('escuelas', {sourceLayer: 'Educacion_COL_BOG-2c0xat'});
-                                const schoolsInsideIsochrone = allSchools.filter(feature => turf.booleanContains(isocronaGeometry, feature.geometry));
-                                const filteredSchoolsGeoJSON = {type: 'FeatureCollection', features: schoolsInsideIsochrone};
-
-                                if (map.getSource('filtered-escuelas')) {
-                                    map.getSource('filtered-escuelas').setData(filteredSchoolsGeoJSON);
-                                } else {
-                                    map.addSource('filtered-escuelas', {type: 'geojson', data: filteredSchoolsGeoJSON});
-                                    map.addLayer({
-                                        id: 'filtered-escuelas-layer',
-                                        type: 'circle',
-                                        source: 'filtered-escuelas',
-                                        paint: {'circle-radius': 4, 'circle-color': '#144afc'}
-                                    });
-                                }
-
-                                const allSalud = map.querySourceFeatures('salud', {sourceLayer: 'Sector_Publico_COL_BOG-23gun3'});
-                                const saludInsideIsochrone = allSalud.filter(feature => turf.booleanContains(isocronaGeometry, feature.geometry));
-                                const filteredSaludGeoJSON = {type: 'FeatureCollection', features: saludInsideIsochrone};
-
-                                if (map.getSource('filtered-salud')) {
-                                    map.getSource('filtered-salud').setData(filteredSaludGeoJSON);
-                                } else {
-                                    map.addSource('filtered-salud', {type: 'geojson', data: filteredSaludGeoJSON});
-                                    map.addLayer({
-                                        id: 'filtered-salud-layer',
-                                        type: 'circle',
-                                        source: 'filtered-salud',
-                                        paint: {'circle-radius': 4, 'circle-color': '#f50000'}
-                                    });
-                                }
-                                
-                                map.once('idle', () => {
-                                   
-                                    const schoolsCount = map.queryRenderedFeatures({
-                                        layers: ['escuelas-layer']
-                                    }).filter(feature => turf.booleanContains(isocronaGeometry, feature.geometry)).length;
-                                    const saludCount = map.queryRenderedFeatures({
-                                        layers: ['salud-layer']
-                                    }).filter(feature => turf.booleanContains(isocronaGeometry, feature.geometry)).length;
-                                        });
-                                
-                                // Calcular los conteos de servicios a partir de la isocrona
-                                const { schoolsCount, saludCount } = countServicesInIsocrona(isocronaGeometry);
-
-                                // HTML para la información de servicios
-                                const servicesInfoHTML = `
-                                    <p>Haz click en el servicio de tu interés para ver el listado. Los servicios generados se encuentran a 1 Km caminando desde la vivienda seleccionada</p>
-                                    <strong id="educational-services" style="color: #144afc; cursor: pointer;">Servicios educativos: ${schoolsCount}</strong>
-                                    <strong id="health-services" style="color: #f50000; cursor: pointer;">Servicios gubernamentales: ${saludCount}</strong>
-                                `;
-
-                                // Combinar ambos bloques HTML y asignarlo al contenido de la pestaña
-                                document.getElementById('nearby-services').innerHTML = interactiveElementsHTML + servicesInfoHTML;
-
-                                // Asignar eventos a los servicios
-                                handleServiceClick('educational-services', 'filtered-escuelas-layer');
-                                handleServiceClick('health-services', 'filtered-salud-layer');
-
-                                // Mostrar la pestaña "Servicios cercanos"
-                                showTab('nearby-services');
-                                    
-                            });
-                        
-                            
-                        })
-                        .catch(error => {
-                            console.error('Error generating isochrone:', error);
-                        });
-                });
+                if (selectedValue === "Buenos Aires") {
+                    map.flyTo({ center: [-58.5981108, -34.6154304], zoom: 10 }); // Ciudad de México
+                } else if (selectedValue === "Bogota") {
+                    map.flyTo({ center: [-74.0978858, 4.67], zoom: 10 }); // Estado de México
+                } else {
+                    map.flyTo({ center: [-7.7, -54.88], zoom: 5 }); // Zoom out to view all
+                }
             });
             
             function handleServiceClick(serviceType, serviceLayer) {
                 document.getElementById(serviceType).addEventListener('click', () => {
                     const serviceInfo = document.getElementById('service-info');
-
-                    // Limpiar tablas anteriores
                     serviceInfo.innerHTML = '';
-
-                    // Obtener las características del servicio
                     const features = map.queryRenderedFeatures({ layers: [serviceLayer] });
                     if (features.length > 0) {
-                        // Obtener los datos de todos los servicios
                         const serviceDataArray = features.map(feature => feature.properties);
-                        const tableContainer = createServiceTable(serviceDataArray);
+                        const tableContainer = createServiceTable(serviceDataArray, serviceLayer); // Pasar serviceLayer
                         serviceInfo.appendChild(tableContainer);
-
-                        // Mostrar el contenedor de información
                         const serviceInfoContainer = document.getElementById('service-info-container');
-                        serviceInfoContainer.style.display = 'block'; // Mostrar la tabla de servicios
+                        serviceInfoContainer.style.display = 'block';
                     }
                 });
             }
             
+            // Función para calcular los conteos de servicios dentro de la isocrona
+            function countServicesInIsocrona(isocronaGeometry) {
+                
+                const schoolsCount = map.queryRenderedFeatures({
+                    layers: ['filtered-escuelas-layer']
+                }).filter(feature => turf.booleanContains(isocronaGeometry, feature.geometry)).length;
+                const saludCount = map.queryRenderedFeatures({
+                    layers: ['filtered-salud-layer']
+                }).filter(feature => turf.booleanContains(isocronaGeometry, feature.geometry)).length;
+                
+                return { schoolsCount, saludCount};
+            }
             
-            
-            function createServiceTable(serviceDataArray) {
+            function createServiceTable(serviceDataArray, serviceLayer) {
+                const tableContainer = document.createElement('div'); // Contenedor para la tabla
+
+                // Crear tabla
                 const table = document.createElement('table');
                 table.classList.add('service-table');
+                tableContainer.appendChild(table);
 
-                // Crear el encabezado de la tabla
+                // Crear fila de encabezados
                 const headerRow = document.createElement('tr');
                 headerRow.appendChild(document.createElement('th')); // Espacio para el índice
-                Object.keys(serviceDataArray[0]).forEach(key => {
+                const keys = Object.keys(serviceDataArray[0]);
+                keys.forEach(key => {
                     const headerCell = document.createElement('th');
                     headerCell.textContent = key;
+
+                    // Añadir evento para ordenar por columna
+                    headerCell.addEventListener('click', () => {
+                        const isAscending = headerCell.classList.contains('ascending');
+                        serviceDataArray.sort((a, b) => {
+                            if (a[key] < b[key]) return isAscending ? -1 : 1;
+                            if (a[key] > b[key]) return isAscending ? 1 : -1;
+                            return 0;
+                        });
+
+                        // Alternar ordenación
+                        headerCell.classList.toggle('ascending', !isAscending);
+                        headerCell.classList.toggle('descending', isAscending);
+
+                        createRows(serviceDataArray); // Re-crear filas con el nuevo orden
+                    });
+
                     headerRow.appendChild(headerCell);
                 });
                 table.appendChild(headerRow);
 
-                // Crear las filas de datos
-                serviceDataArray.forEach((data, index) => {
-                    const dataRow = document.createElement('tr');
+                // Función para crear filas de datos
+                function createRows(dataArray) {
+                    // Limpiar filas existentes
+                    while (table.rows.length > 1) {
+                        table.deleteRow(1);
+                    }
 
-                    // Crear la celda del índice
-                    const indexCell = document.createElement('td');
-                    indexCell.textContent = index + 1; // Índice comenzando desde 1
-                    dataRow.appendChild(indexCell);
+                    dataArray.forEach((data, index) => {
+                        const dataRow = document.createElement('tr');
+                        dataRow.setAttribute('data-index', index); // Asignar índice a la fila
 
-                    // Crear celdas de datos respetando los campos vacíos
-                    Object.keys(serviceDataArray[0]).forEach(key => {
-                        const dataCell = document.createElement('td');
-                        dataCell.textContent = data[key] !== undefined && data[key] !== null ? data[key] : ''; // Respetar campos vacíos
-                        dataRow.appendChild(dataCell);
+                        const indexCell = document.createElement('td');
+                        indexCell.textContent = index + 1; // Índice comenzando desde 1
+                        dataRow.appendChild(indexCell);
+
+                        Object.values(data).forEach(value => {
+                            const dataCell = document.createElement('td');
+                            dataCell.textContent = value;
+                            dataRow.appendChild(dataCell);
+                        });
+
+                        // Evento click en la fila
+                        dataRow.addEventListener('click', function() {
+                            // Quitar resaltado de otras filas
+                            const rows = table.querySelectorAll('tr');
+                            rows.forEach(row => row.classList.remove('highlight'));
+
+                            // Resaltar la fila seleccionada
+                            dataRow.classList.add('highlight');
+
+                            // Resaltar el punto en el mapa
+                            const clickedFeature = map.queryRenderedFeatures({ layers: [serviceLayer] })[index];
+                            map.setFeatureState({ source: serviceLayer, id: clickedFeature.id }, { selected: true });
+                        });
+
+                        table.appendChild(dataRow);
                     });
+                }
 
-                    table.appendChild(dataRow);
-                });
+                createRows(serviceDataArray); // Crear filas iniciales
 
-                return table;
+                return tableContainer;
             }
 
+            document.querySelector(`.tab-button[onclick="showTab('nearby-services')"]`).addEventListener('click', () => {
+            // Obtener la geometría de la isocrona
+            const isocronaGeometry = map.getSource('isochrone-source')._data.features[0].geometry;
 
+            // Calcular los conteos de servicios a partir de la isocrona
+            const { schoolsCount, saludCount } = countServicesInIsocrona(isocronaGeometry);
 
+            // HTML para la información de servicios
+            const servicesInfoHTML = `
+                <p>Selecciona una de las opciones debajo para ver la tabla servicios dentro de la isocrona:</p>
+                <strong id="educational-services" style="color: #144afc; cursor: pointer;">Ver ${schoolsCount} servicios educativos</strong>
+                <strong id="health-services" style="color: #f50000; cursor: pointer;">Ver ${saludCount} servicios gubernamentales</strong>
+            `;
+
+            // Actualizar el contenido de la pestaña "Servicios cercanos"
+            document.getElementById('nearby-services').innerHTML = servicesInfoHTML;
+
+            // Asignar eventos a los servicios
+            handleServiceClick('educational-services', 'filtered-escuelas-layer');
+            handleServiceClick('health-services', 'filtered-salud-layer');
+
+            // Mostrar la pestaña "Servicios cercanos"
+            showTab('nearby-services');
+
+            // Asegurarse de que el botón toggle-button esté visible
+            const toggleButton = document.getElementById('toggle-button');
+            toggleButton.style.display = 'block'; // Mostrar el botón toggle-button
+        });
+
+        // Referencias a los elementos
+        const toggleButton = document.getElementById('toggle-button');
+        const serviceInfo = document.getElementById('service-info');
+        const closeServiceIcon = document.getElementById('close-service');
+
+        // Mostrar/ocultar el contenedor de servicios
+        toggleButton.addEventListener('click', () => {
+            const isServiceInfoVisible = serviceInfo.style.display === 'block';
+            serviceInfo.style.display = isServiceInfoVisible ? 'none' : 'block';
+            toggleButton.textContent = isServiceInfoVisible ? 'Mostrar servicios' : 'Ocultar servicios';
+        });
+
+        // Cerrar el contenedor de servicios al hacer clic en el ícono de cierre y ocultar el botón toggle-button
+        closeServiceIcon.addEventListener('click', () => {
+            serviceInfo.style.display = 'none';
+            toggleButton.style.display = 'none'; // Ocultar el botón toggle-button
+        });
+
+            // Función para manejar el clic en la vivienda
+            function handleViviendaClick(viviendaType, viviendaLayer) {
+                document.getElementById(viviendaType).addEventListener('click', () => {
+                    // Limpiar tablas anteriores
+                    viviendaInfo.innerHTML = '';
+                    // Obtener las características del servicio
+                    const features = map.queryRenderedFeatures({ layers: [viviendaLayer] });
+                    if (features.length > 0) {
+                        // Obtener los datos de todos los servicios
+                        const viviendaDataArray = features.map(feature => feature.properties);
+                        const tableContainer = createViviendaTable(viviendaDataArray);
+                        viviendaInfo.appendChild(tableContainer);
+
+                        // Mostrar el contenedor de información
+                        const viviendaInfoContainer = document.getElementById('vivienda-info-container');
+                        viviendaInfoContainer.style.display = 'block'; // Mostrar la tabla de viviendas
+                    }
+                });
+            }
+
+            // Función para calcular los conteos de servicios dentro de la isocrona
+            function countViviendaInIsocrona(isocronaGeometry) {
+                const viviendaCount = map.queryRenderedFeatures({
+                    layers: ['filtered-vivienda-layer']
+                }).filter(feature => turf.booleanContains(isocronaGeometry, feature.geometry)).length;
+                return { viviendaCount};
+            }
             
-            //////////////////////////////////////////////////////////////////////////////////////////
+            function createViviendaTable(viviendaDataArray, viviendaLayer) {
+                const tableContainer = document.createElement('div'); // Contenedor para la tabla
+
+                // Crear tabla
+                const table = document.createElement('table');
+                table.classList.add('vivienda-table');
+                tableContainer.appendChild(table);
+
+                // Crear fila de encabezados
+                const headerRow = document.createElement('tr');
+                const keys = Object.keys(viviendaDataArray[0]);
+                headerRow.appendChild(document.createElement('th')); // Espacio para el índice
+                keys.forEach(key => {
+                    const headerCell = document.createElement('th');
+                    headerCell.textContent = key;
+
+                    // Añadir evento para ordenar por columna
+                    headerCell.addEventListener('click', () => {
+                        const isAscending = headerCell.classList.contains('ascending');
+                        viviendaDataArray.sort((a, b) => {
+                            if (a[key] < b[key]) return isAscending ? -1 : 1;
+                            if (a[key] > b[key]) return isAscending ? 1 : -1;
+                            return 0;
+                        });
+
+                        // Alternar ordenación
+                        headerCell.classList.toggle('ascending', !isAscending);
+                        headerCell.classList.toggle('descending', isAscending);
+
+                        createRows(viviendaDataArray); // Re-crear filas con el nuevo orden
+                    });
+
+                    headerRow.appendChild(headerCell);
+                });
+                table.appendChild(headerRow);
+
+                // Función para crear filas de datos
+                function createRows(dataArray) {
+                    // Limpiar filas existentes
+                    while (table.rows.length > 1) {
+                        table.deleteRow(1);
+                    }
+
+                    dataArray.forEach((data, index) => {
+                        const dataRow = document.createElement('tr');
+                        dataRow.setAttribute('data-index', index); // Asignar índice a la fila
+
+                        const indexCell = document.createElement('td');
+                        indexCell.textContent = index + 1; // Índice comenzando desde 1
+                        dataRow.appendChild(indexCell);
+
+                        // Agregar celdas de datos, manteniendo la estructura de columnas
+                        keys.forEach(key => {
+                            const dataCell = document.createElement('td');
+                            dataCell.textContent = data[key] !== null && data[key] !== undefined ? data[key] : ''; // Celda vacía si no hay valor
+                            dataRow.appendChild(dataCell);
+                        });
+
+                        // Evento click en la fila
+                        dataRow.addEventListener('click', function() {
+                            // Quitar resaltado de otras filas
+                            const rows = table.querySelectorAll('tr');
+                            rows.forEach(row => row.classList.remove('highlight'));
+
+                            // Resaltar la fila seleccionada
+                            dataRow.classList.add('highlight');
+
+                            // Limpiar estados anteriores de las características en el mapa
+                            map.queryRenderedFeatures({ layers: [viviendaLayer] }).forEach(feature => {
+                                map.setFeatureState({ source: viviendaLayer, id: feature.id }, { selected: false });
+                            });
+
+                            // Resaltar el punto en el mapa correspondiente a la fila seleccionada
+                            const clickedFeature = map.queryRenderedFeatures({ layers: [viviendaLayer] })[index];
+                            if (clickedFeature) {
+                                map.setFeatureState({ source: viviendaLayer, id: clickedFeature.id }, { selected: true });
+                            }
+                        });
+
+                        table.appendChild(dataRow);
+                    });
+                }
+
+                createRows(viviendaDataArray); // Crear filas iniciales
+
+                return tableContainer;
+            }
+            
+            // Mostrar la pestaña 'compare' y restablecer el botón toggle-button-2
+            document.querySelector('.tab-button[onclick="showTab(\'compare\')"]').addEventListener('click', () => {
+                // Obtener la geometría de la isocrona
+                const isocronaGeometry = map.getSource('isochrone-source')._data.features[0].geometry;
+
+                // Calcular los conteos de viviendas a partir de la isocrona
+                const { viviendaCount } = countViviendaInIsocrona(isocronaGeometry);
+
+                // Crear el contenido HTML para la pestaña 'compare'
+                const viviendaInfoHTML = `
+                    <p>Selecciona una de las opciones debajo para ver la tabla de viviendas dentro de la isocrona:</p>
+                    <strong id="vivienda" style="color: black; cursor: pointer;">Ver ${viviendaCount} viviendas en venta</strong>
+                `;
+
+                // Actualizar el contenido de la pestaña 'compare'
+                document.getElementById('compare').innerHTML = viviendaInfoHTML;
+
+                // Manejar el clic en la opción de ver viviendas
+                handleViviendaClick('vivienda', 'filtered-vivienda-layer');
+
+                // Mostrar la pestaña 'compare'
+                showTab('compare');
+
+                // Asegurarse de que el botón toggle-button-2 esté visible
+                const toggleButton2 = document.getElementById('toggle-button-2');
+                toggleButton2.style.display = 'block'; // Mostrar el botón toggle-button-2
+            });
+
+            // Referencias a los elementos
+            const toggleButton2 = document.getElementById('toggle-button-2');
+            const viviendaInfo = document.getElementById('vivienda-info');
+            const closeViviendaIcon = document.getElementById('close-vivienda');
+
+            // Mostrar/ocultar el contenedor de viviendas
+            toggleButton2.addEventListener('click', () => {
+                const isViviendaInfoVisible = viviendaInfo.style.display === 'block';
+                viviendaInfo.style.display = isViviendaInfoVisible ? 'none' : 'block';
+                toggleButton2.textContent = isViviendaInfoVisible ? 'Mostrar viviendas' : 'Ocultar viviendas';
+            });
+
+            // Cerrar el contenedor de viviendas al hacer clic en el ícono de cierre y ocultar el botón toggle-button-2
+            closeViviendaIcon.addEventListener('click', () => {
+                viviendaInfo.style.display = 'none';
+                toggleButton2.style.display = 'none'; // Ocultar el botón toggle-button-2
+            });
+            
+            function updateLegend() {
+                const legend = document.getElementById('legend');
+                legend.innerHTML = ''; // Limpiar contenido previo
+
+                legend.innerHTML = '<h3>Simbología</h3>'; // Agregar título
+                
+                // Añadir simbología para cada capa activa
+                if (map.getLayer('vivienda-layer')) {
+                    legend.innerHTML += '<div><span style="background-color: black; width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 15px; margin-top: 10px;"></span>Viviendas en venta</div>';
+                }
+                if (map.getLayer('isochrone-line-layer')) {
+                    legend.innerHTML += '<div><span style="background-color: black; width: 15px; height: 3px; display: inline-block; margin-right: 15px; margin-top: 10px;"></span>Línea Isocrona</div>';
+                }
+                if (map.getLayer('selected-point-layer')) {
+                    legend.innerHTML += '<div><span style="background-color: #00ffff; width: 15px; height: 15px; display: inline-block; margin-right: 15px; margin-top: 10px;"></span>Punto seleccionado</div>';
+                }
+                
+                if (map.getLayer('filtered-escuelas-layer')) {
+                    legend.innerHTML += '<div><span style="background-color: #144afc; width: 15px; height: 15px; display: inline-block; margin-right: 15px; margin-top: 10px;"></span>Escuelas</div>';
+                }
+                if (map.getLayer('filtered-salud-layer')) {
+                    legend.innerHTML += '<div><span style="background-color: #f50000; width: 15px; height: 15px; display: inline-block; margin-right: 15px; margin-top: 10px;"></span>Servicios gubernamentales</div>';
+                }
+                if (map.getLayer('isochrone-layer')) {
+                    legend.innerHTML += '<div><span style="background-color: grey; width: 15px; height: 15px; display: inline-block; margin-right: 15px; margin-top: 10px;"></span>Isocrona</div>';
+                }
+                
+            }
+
+            map.on('idle', updateLegend);
             
             document.addEventListener('DOMContentLoaded', (event) => {
                 const expandBtn = document.querySelector('.description .expand-btn');
@@ -1081,30 +1651,40 @@
                 });
             });
             
-            // Referencias a los elementos
-            const toggleButton = document.getElementById('toggle-button');
-            const serviceInfoContainer = document.getElementById('service-info-container');
-            const serviceInfo = document.getElementById('service-info');
+            // Mostrar el modal al cargar la página
+            window.onload = function() {
+                document.getElementById('modal').style.display = 'flex';
+            };
 
-            // Función para mostrar y ocultar la tabla de servicios
-            toggleButton.addEventListener('click', () => {
-                if (serviceInfo.style.display === 'none' || serviceInfo.style.display === '') {
-                    serviceInfo.style.display = 'block'; // Mostrar la tabla
-                    toggleButton.textContent = 'Ocultar servicios'; // Cambiar el texto del botón
+            // Cerrar el modal cuando se haga clic en la X
+            document.querySelector('.close').onclick = function() {
+                document.getElementById('modal').style.display = 'none';
+            };
+
+            // Cerrar el modal y aplicar el filtro cuando se haga clic en el botón de confirmación
+            document.getElementById('confirm-selection').onclick = function() {
+                const selectedEntity = document.getElementById('filter-ciudad').value;
+
+                if (selectedEntity !== null) {
+                    filterMap(selectedEntity);
+                    document.getElementById('modal').style.display = 'none';
                 } else {
-                    serviceInfo.style.display = 'none'; // Ocultar la tabla
-                    toggleButton.textContent = 'Mostrar servicios'; // Cambiar el texto del botón
+                    alert('Por favor selecciona una entidad.');
                 }
-            });
+            };
 
-            // Inicializar la tabla como oculta
-            serviceInfo.style.display = 'block';
-            
-            //////////////////////////////////////////////////////////////////////////////////////////
+            // Función para aplicar el filtro en la capa del mapa
+            function filterMap(selectedValue) {
+                if (selectedValue === "") {
+                    map.setFilter('inmuebles-layer', ['!=', 'Ciudad', '']);
+                } else {
+                    map.setFilter('inmuebles-layer', ['==', 'Ciudad', selectedValue]);
+                }
+            }
             
             document.getElementById('download-button').addEventListener('click', () => {
                 const features = map.querySourceFeatures('tileset-source', {
-                    sourceLayer: 'Viviendas_COL_BOG-3lozlg'
+                    sourceLayer: 'Suramerica_Vivienda-b9hfdt'
                 });
 
                 const geojson = {
@@ -1124,5 +1704,6 @@
         });
  
     </script>
+    
 </body>
 </html>
